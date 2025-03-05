@@ -68,8 +68,6 @@ export default function ChatLayout({ currentUser }: ChatLayoutProps) {
                 .select("*")
                 .eq("chat_id", chat.id)
                 .order("created_at", { ascending: false })
-                .limit(1)
-                .single()
 
               // Fetch participants for each chat
               const { data: participantsData } = await supabase
