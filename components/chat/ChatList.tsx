@@ -33,20 +33,20 @@ export default function ChatList({
     const matchesSearch =
       searchTerm === "" ||
       chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (chat.lastMessage &&
-        chat.lastMessage.content
+      (chat.last_message &&
+        chat.last_message.content
           .toLowerCase()
           .includes(searchTerm.toLowerCase()));
 
     const matchesLabels =
       selectedLabels.length === 0 ||
-      chat.labels.some((label) => selectedLabels.includes(label.name));
+      chat?.labels?.some((label) => selectedLabels.includes(label.name));
 
     return matchesSearch && matchesLabels;
   });
 
   const allLabels = Array.from(
-    new Set(chats.flatMap((chat) => chat.labels.map((label) => label.name)))
+    new Set(chats.flatMap((chat) => chat?.labels?.map((label) => label.name)))
   );
 
   const toggleLabel = (label: string) => {
@@ -110,9 +110,11 @@ export default function ChatList({
             {allLabels.map((label) => (
               <Badge
                 key={label}
-                variant={selectedLabels.includes(label) ? "default" : "outline"}
+                variant={
+                  selectedLabels.includes(label || "") ? "default" : "outline"
+                }
                 className="cursor-pointer"
-                onClick={() => toggleLabel(label)}
+                onClick={() => toggleLabel(label || "")}
               >
                 {label}
               </Badge>
@@ -148,13 +150,13 @@ export default function ChatList({
                 >
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-10 w-10">
-                      {chat.isGroup ? (
+                      {chat.is_group ? (
                         <span className="text-xs">
                           {chat.name.substring(0, 2)}
                         </span>
                       ) : (
                         <span className="text-xs">
-                          {chat.participants[0]?.full_name.substring(0, 2) ||
+                          {chat.participants?.[0]?.full_name?.substring(0, 2) ||
                             "U"}
                         </span>
                       )}
@@ -166,25 +168,25 @@ export default function ChatList({
                           {chat.name}
                         </h3>
                         <span className="text-xs text-gray-500">
-                          {chat.updatedAt &&
-                            formatDistanceToNow(new Date(chat.updatedAt), {
+                          {chat.updated_at &&
+                            formatDistanceToNow(new Date(chat.updated_at), {
                               addSuffix: true,
                             })}
                         </span>
                       </div>
 
                       <p className="text-sm text-gray-500 truncate">
-                        {chat.lastMessage?.content || "No messages yet"}
+                        {chat.last_message?.content || "No messages yet"}
                       </p>
 
                       <div className="flex items-center mt-1 space-x-2">
-                        {chat.participants[0]?.phone && (
+                        {chat.participants?.[0]?.phone && (
                           <span className="text-xs text-gray-400">
                             {chat.participants[0].phone}
                           </span>
                         )}
 
-                        {chat.labels.map((label) => (
+                        {chat.labels?.map((label) => (
                           <Badge
                             key={label.id}
                             variant="outline"

@@ -1,39 +1,43 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import type { SupabaseClient } from "@supabase/supabase-js"
-import { Sidebar } from "../sidebar" // Fix: Update the import path to be relative
-import { ChatWindow } from "./chat-window"
-import { toast } from "sonner"
-import type { User, Chat } from "@/types"
-import ChatList from "./ChatList"
-import { DEMO_USER } from "@/lib/constants"
+import { useState, useEffect } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
+// Fix: Update the import path to be relative
+import { ChatWindow } from "./chat-window";
+import { toast } from "sonner";
+import type { User, Chat } from "@/types";
+import ChatList from "./ChatList";
+import { DEMO_USER } from "@/lib/constants";
+import { Sidebar } from "../sidebar";
 
 interface ChatLayoutProps {
   supabase: SupabaseClient;
+  currentUser: User;  // Add this line
 }
 
-export default function ChatLayout({ supabase }: ChatLayoutProps) {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
-  const [chats, setChats] = useState<Chat[]>([])
-  const [loading, setLoading] = useState(true)
+export default function ChatLayout({ supabase, currentUser }: ChatLayoutProps) {
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadChats = async () => {
       try {
         const { data, error } = await supabase
           .from("chats")
-          .select(`
+          .select(
+            `
             *,
             chat_participants!inner(user_id),
             chat_labels(
               *,
               labels(*)
             )
-          `)
-          .order("updated_at", { ascending: false })
+          `
+          )
+          .order("updated_at", { ascending: false });
 
-        if (error) throw error
+        if (error) throw error;
 
         if (data) {
           const processedChats = await Promise.all(
@@ -44,14 +48,16 @@ export default function ChatLayout({ supabase }: ChatLayoutProps) {
                 .eq("chat_id", chat.id)
                 .order("created_at", { ascending: false })
                 .limit(1)
-                .single()
+                .single();
 
               const { data: participantsData } = await supabase
                 .from("chat_participants")
-                .select(`
+                .select(
+                  `
                   users:user_id (*)
-                `)
-                .eq("chat_id", chat.id)
+                `
+                )
+                .eq("chat_id", chat.id);
 
               return {
                 id: chat.id,
@@ -62,23 +68,35 @@ export default function ChatLayout({ supabase }: ChatLayoutProps) {
                 labels: chat.chat_labels?.map((cl: any) => cl.labels) || [],
                 createdAt: chat.created_at,
                 updatedAt: chat.updated_at,
-              }
+              };
             })
-          )
+          );
 
-          setChats(processedChats)
+          setChats(
+            processedChats.map((chat) => ({
+              ...chat,
+              is_group: chat.isGroup,
+              created_at: chat.createdAt,
+              updated_at: chat.updatedAt,
+            }))
+          );
           if (processedChats.length > 0) {
-            setSelectedChat(processedChats[0])
+            setSelectedChat({
+              ...processedChats[0],
+              is_group: processedChats[0].isGroup,
+              created_at: processedChats[0].createdAt,
+              updated_at: processedChats[0].updatedAt,
+            });
           }
         }
       } catch (error: any) {
-        toast.error(`Error loading chats: ${error.message}`)
+        toast.error(`Error loading chats: ${error.message}`);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadChats()
+    loadChats();
 
     // Set up real-time subscription for new messages
     const messagesSubscription = supabase
@@ -87,42 +105,40 @@ export default function ChatLayout({ supabase }: ChatLayoutProps) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
-          const newMessage = payload.new
+          const newMessage = payload.new;
           setChats((prevChats) =>
             prevChats.map((chat) =>
               chat.id === newMessage.chat_id
                 ? { ...chat, lastMessage: newMessage }
                 : chat
             )
-          )
+          );
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(messagesSubscription)
-    }
-  }, [supabase])
+      supabase.removeChannel(messagesSubscription);
+    };
+  }, [supabase]);
 
   return (
     <div className="flex h-screen">
       <div className="flex">
         <Sidebar />
         <ChatList
-          currentUser={DEMO_USER}  // Keep using DEMO_USER
+          currentUser={currentUser}  // Update this line
           chats={chats}
           selectedChat={selectedChat}
           onSelectChat={setSelectedChat}
           loading={loading}
-          supabase={supabase}
         />
       </div>
       <ChatWindow
-        currentUser={DEMO_USER}  // Keep using DEMO_USER
+        currentUser={currentUser}  // Update this line
         selectedChat={selectedChat}
         supabase={supabase}
       />
     </div>
-  )
+  );
 }
-
