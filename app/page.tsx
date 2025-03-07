@@ -8,5 +8,5 @@ import { DEMO_USER } from "@/lib/constants"
 export default function Home() {
   const supabase = createClientComponentClient()
 
-  return <ChatLayout currentUser={DEMO_USER} />
+  return <ChatLayout currentUser={DEMO_USER} supabase={supabase} />
 }
