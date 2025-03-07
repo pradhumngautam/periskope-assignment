@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from "react"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { Sidebar } from "@/components/sidebar" // Fix the import path
+import { Sidebar } from "@/components/sidebar"
 import { ChatWindow } from "./chat-window"
 import { toast } from "sonner"
 import type { User, Chat } from "@/types"
 import ChatList from "./ChatList"
+import { DEMO_USER } from "@/lib/constants" // Add back the DEMO_USER import
 
 interface ChatLayoutProps {
-  currentUser: User;
   supabase: SupabaseClient;
 }
 
-export default function ChatLayout({ currentUser, supabase }: ChatLayoutProps) {
+export default function ChatLayout({ supabase }: ChatLayoutProps) {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [chats, setChats] = useState<Chat[]>([])
   const [loading, setLoading] = useState(true)
@@ -109,7 +109,7 @@ export default function ChatLayout({ currentUser, supabase }: ChatLayoutProps) {
       <div className="flex">
         <Sidebar />
         <ChatList
-          currentUser={DEMO_USER}
+          currentUser={DEMO_USER}  // Keep using DEMO_USER
           chats={chats}
           selectedChat={selectedChat}
           onSelectChat={setSelectedChat}
@@ -118,7 +118,7 @@ export default function ChatLayout({ currentUser, supabase }: ChatLayoutProps) {
         />
       </div>
       <ChatWindow
-        currentUser={DEMO_USER}
+        currentUser={DEMO_USER}  // Keep using DEMO_USER
         selectedChat={selectedChat}
         supabase={supabase}
       />
