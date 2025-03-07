@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Sidebar } from "../Sidebar"  // Fixed: Updated to match the correct filename case
 import { ChatWindow } from "./chat-window";
 import { toast } from "sonner";
 import type { User, Chat } from "@/types";
 import ChatList from "./ChatList";
-import { DEMO_USER } from "@/lib/constants";
-import { Sidebar } from "@/components/sidebar"; // Fix: Update the import path
 
 interface ChatLayoutProps {
   supabase: SupabaseClient;
-  currentUser: User;  // Add this line
+  currentUser: User;
 }
 
 export default function ChatLayout({ supabase, currentUser }: ChatLayoutProps) {
