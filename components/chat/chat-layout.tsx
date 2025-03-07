@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { Sidebar } from "@/components/sidebar"
+import { Sidebar } from "../sidebar" // Fix: Update the import path to be relative
 import { ChatWindow } from "./chat-window"
 import { toast } from "sonner"
 import type { User, Chat } from "@/types"
 import ChatList from "./ChatList"
-import { DEMO_USER } from "@/lib/constants" // Add back the DEMO_USER import
+import { DEMO_USER } from "@/lib/constants"
 
 interface ChatLayoutProps {
   supabase: SupabaseClient;

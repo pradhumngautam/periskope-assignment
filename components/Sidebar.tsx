@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Home,
@@ -6,9 +6,9 @@ import {
   BarChart2,
   Users,
   Settings,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar } from "@/components/ui/avatar"
 
 export function Sidebar() {
   return (
@@ -58,5 +58,5 @@ export function Sidebar() {
         </div>
       </div>
     </div>
-  );
+  )
 }
