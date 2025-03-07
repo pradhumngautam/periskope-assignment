@@ -16,11 +16,9 @@ interface ChatWindowProps {
   currentUser: User
   selectedChat: Chat | null
   supabase: SupabaseClient
-  getMessages: (chatId: string) => Promise<Message[]>
-  storeMessages: (messages: Message[]) => Promise<void>
 }
 
-export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, storeMessages }: ChatWindowProps) {
+export function ChatWindow({ currentUser, selectedChat, supabase }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(false)
@@ -33,15 +31,6 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
     const fetchMessages = async () => {
       setLoading(true)
       try {
-        // Try to get messages from IndexedDB first
-        const cachedMessages = await getMessages(selectedChat.id)
-
-        if (cachedMessages && cachedMessages.length > 0) {
-          setMessages(cachedMessages)
-          scrollToBottom()
-        }
-
-        // Then fetch from Supabase
         const { data, error } = await supabase
           .from("messages")
           .select(`
@@ -56,7 +45,6 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
         }
 
         if (data) {
-          // Process the data to match our Message type
           const processedMessages = data.map((message: any) => ({
             id: message.id,
             chat_id: message.chat_id,
@@ -69,9 +57,6 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
           }))
 
           setMessages(processedMessages)
-
-          // Store in IndexedDB for offline access
-          await storeMessages(processedMessages)
         }
       } catch (error: any) {
         toast.error(`Error loading messages: ${error.message}`)
@@ -83,7 +68,6 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
 
     fetchMessages()
 
-    // Set up real-time subscription for new messages
     const messagesSubscription = supabase
       .channel(`messages:${selectedChat.id}`)
       .on(
@@ -95,7 +79,6 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
           filter: `chat_id=eq.${selectedChat.id}`,
         },
         (payload) => {
-          // Fetch the sender information
           supabase
             .from("users")
             .select("*")
@@ -108,17 +91,16 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
               } as Message
 
               setMessages((prev) => [...prev, newMessage])
-              storeMessages([newMessage])
               scrollToBottom()
             })
-        },
+        }
       )
       .subscribe()
 
     return () => {
       supabase.removeChannel(messagesSubscription)
     }
-  }, [selectedChat, supabase, getMessages, storeMessages])
+  }, [selectedChat, supabase])
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -128,26 +110,26 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!selectedChat || !newMessage.trim()) return
-
+  
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("messages")
         .insert({
           chat_id: selectedChat.id,
-          sender_id: currentUser.id,
+          sender_id: currentUser.id, // This will now be a valid UUID
           content: newMessage.trim(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
-        .select()
-        .single()
-
+  
       if (error) {
+        console.error("Send message error details:", error)
         throw error
       }
-
       setNewMessage("")
     } catch (error: any) {
+      console.error("Send message error:", error)
       toast.error(`Error sending message: ${error.message}`)
     }
   }
@@ -187,12 +169,14 @@ export function ChatWindow({ currentUser, selectedChat, supabase, getMessages, s
           <div>
             <h2 className="font-medium">{selectedChat.name}</h2>
             <div className="flex items-center text-sm text-gray-500 space-x-1">
-              {selectedChat.participants.map((participant, index) => (
-                <span key={participant.id}>
-                  {participant.full_name}
-                  {index < selectedChat.participants.length - 1 && ", "}
-                </span>
-              ))}
+              {selectedChat.participants
+                .filter((participant): participant is User => participant !== null)
+                .map((participant, index) => (
+                  <span key={participant.id}>
+                    {participant?.full_name || 'Unknown User'}
+                    {index < selectedChat.participants.length - 1 && ", "}
+                  </span>
+                ))}
             </div>
           </div>
         </div>
